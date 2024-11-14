@@ -1,46 +1,54 @@
-import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { loginUser } from "../store/slices/authSlice";
-import { RootState } from "../store/store";
+import { useState } from 'react';
+import { useAppDispatch } from '../store/hooks/useAppDispatch';
+import { loginUser } from '../store/slices/userSlice';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const dispatch = useDispatch();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // הוספת מצב לניהול טעינה
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    dispatch(loginUser({ username, password }) as any)
-      .unwrap()
-      .then(() => navigate("/dashboard"))
-      .catch((err: any) => console.error(err));
+  const handleLogin = async () => {
+    if (!username || !password) {
+      alert("Please fill in both username and password.");
+      return;
+    }
+  
+    try {
+      const resultAction = await dispatch(loginUser({ username, password }));
+      if (loginUser.fulfilled.match(resultAction)) {
+        navigate("/dashboard"); // מעבר לדשבורד
+      } else {
+        alert("Login failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("An error occurred during login.");
+    }
   };
+  
 
   return (
     <div>
       <h1>Login</h1>
-      <form onSubmit={handleLogin}>
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button type="submit" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <button onClick={() => navigate("/register")}>Create New User</button>
+      <input
+        type="text"
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+      />
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <button onClick={handleLogin} disabled={isLoading}>
+        {isLoading ? 'Logging in...' : 'Login'}
+      </button>
+      <button onClick={() => navigate('/register')}>Register</button>
     </div>
   );
 };
